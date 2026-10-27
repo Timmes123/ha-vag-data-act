@@ -189,7 +189,7 @@ def convert(slot: Slot, raw: str) -> Any:
     except ValueError:
         return None
     if slot.scale is not None:
-        value = round(value * slot.scale, 3)
+        value = round(value * slot.scale + slot.offset, 3)
     return value
 
 

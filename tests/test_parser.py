@@ -328,3 +328,9 @@ def test_merge_points_keeps_values_missing_from_newer_package():
     single = parse_dataset(F180109.read_bytes(), source="x.json")
     assert single.values["soc"].captured_at == t_full
     assert single.values["soc"].source == "x.json"
+
+
+def test_climatisation_target_temperature_is_degrees():
+    parsed = parse_dataset(F180109.read_bytes())
+    sv = parsed.values["climatisation_target_temperature"]
+    assert sv.raw == "120" and sv.value == 22.0 and sv.unit == "°C"

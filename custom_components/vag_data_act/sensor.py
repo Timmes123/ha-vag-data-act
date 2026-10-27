@@ -199,6 +199,8 @@ SLOT_SENSORS: tuple[SlotSensorDescription, ...] = (
     SlotSensorDescription(
         key="climatisation_target_temperature",
         slot="climatisation_target_temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
     SlotSensorDescription(

@@ -150,7 +150,7 @@
         "name": "Auto-Entriegelung AC"
       },
       "climatisation_target_temperature": {
-        "name": "Klima-Zieltemperatur (roh)"
+        "name": "Klima-Zieltemperatur"
       },
       "profile_vehicle_time": {
         "name": "Fahrzeugzeit (Profil-Report)"

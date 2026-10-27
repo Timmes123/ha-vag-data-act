@@ -13,7 +13,7 @@ parser (`custom_components/vag_data_act/parser.py`, table in `slots.py`) resolve
 | `settings.max_charge_current_ac` | `0387de65-…`, `63e08d24-…` | identical | agree → value, warning on deviation | Pure duplicates (settings report + settings job report). |
 | `settings.auto_unlock_ac` | `02c331b7-…`, `2d7b0796-…` | identical | agree | Pure duplicates. |
 | `settings.charge_mode_selection` | `53975124-…`, `9905c311-…` | identical | agree | Pure duplicates. |
-| `climatisation_settings.target_temperature` | `559fd5ec-…`, `6d4e5b62-…` | 120 / 120 | agree, raw (unit unknown) | Pure duplicates. |
+| `climatisation_settings.target_temperature` | `559fd5ec-…`, `6d4e5b62-…` | 120 / 120 | agree, 10 °C + raw/10 | Pure duplicates. Encoding verified with two vehicles: 120 = 22.0 °C (display), 115 = 21.5 °C (user's setting). |
 | `climatisation_settings.climatisation_without_hv_power` | 2 keys | identical | unmapped | Diagnostics only. |
 | `climatisation_settings.climatisation_element_settings.*` | 2 keys each | identical | unmapped | Diagnostics only. |
 | `additional_consumptions.*` | 4 keys each | identical | unmapped | Diagnostics only. |
@@ -72,3 +72,11 @@ Service `scan_datasets` over 30 consecutive packages per vehicle:
 Both vehicles have an identical portal data request (*All Data* + Charging + …, 15 min).
 Consequences implemented in v0.2.0: every unseen package is merged by key, values carry the
 capture time of their own package, downloads are throttled (HTTP 429 after ~25 in a row).
+
+## SoC vs. HV battery level (live, 2026-10-27)
+
+`battery_state_report.soc` (506cb83e) and `battery_level_HV.value` (ac1108b1) always arrived in
+the same package with the same capture time on both vehicles (Born: 19:47Z package, Tavascan:
+every full package). The vehicle data dictionary describes other `battery_state_report.soc`
+keys as "SoC when charging is started"; those keys did not occur in any package so far. The
+SoC entity therefore stays bound to 506cb83e, the HV level remains a plausibility check.

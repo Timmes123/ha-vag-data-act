@@ -150,7 +150,7 @@
         "name": "Auto unlock AC"
       },
       "climatisation_target_temperature": {
-        "name": "Climatisation target temperature (raw)"
+        "name": "Climatisation target temperature"
       },
       "profile_vehicle_time": {
         "name": "Vehicle time (profile report)"

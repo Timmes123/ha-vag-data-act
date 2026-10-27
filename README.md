@@ -119,6 +119,7 @@ additionally list all `candidates` (key → raw value).
 | Outdoor temperature | `outdoor_temperature` | °C | |
 | Battery temperature (min/max) | `min_temperature`, `max_temperature` | °C | |
 | Climatisation state | `climatisation_state` | enum string | two keys; empty while they contradict, both in `candidates` |
+| Climatisation target temperature | `climatisation_settings.target_temperature` | °C | encoded as tenths of a degree above 10 °C (raw 120 = 22.0 °C) |
 | Remaining climatisation time | `remaining_climate_time` | s, duration | same as above |
 | Window heating | `window_heating_state` | enum string | |
 | Parking light left / right | `parking_light_left/right` | binary, light | |
@@ -127,8 +128,8 @@ additionally list all `candidates` (key → raw value).
 | Data age | now − last vehicle report | min, duration | |
 
 Diagnostic entities: HV battery level, charging scenario, charge mode selection, auto unlock
-AC, climatisation target temperature (raw), profile report time, charging timer start/finish,
-and the health sensors below.
+AC, climatisation target temperature, profile report time, charging timer start/finish, and
+the health sensors below.
 
 ## Health
 
@@ -181,7 +182,6 @@ login hop (codes and states redacted) and every download with inner file name an
 - `climatisation_state` / `remaining_climate_time`: two keys with contradicting values
   (actual state vs. last climatisation job). The entity stays empty while they disagree,
   both keys are in `candidates`.
-- `climatisation_settings.target_temperature`: unit not confirmed yet, exposed raw.
 - Keys were verified on Cupra Tavascan and Born. Other vehicles may deliver other keys; the
   parser then falls back to unique field names and learns them per VIN.
 

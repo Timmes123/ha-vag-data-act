@@ -58,6 +58,7 @@ class Slot:
     key: str | None = None
     policy: Policy = Policy.KEYED
     scale: float | None = None  # multiply the numeric value (0.1 kWh -> kWh)
+    offset: float = 0.0  # added after scaling (temperature encodings)
     note: str = ""
 
 
@@ -371,11 +372,14 @@ SLOTS: tuple[Slot, ...] = (
     Slot(
         "climatisation_target_temperature",
         "climatisation_settings.target_temperature",
-        "Climatisation target temperature (raw, unit not verified)",
-        Kind.INT,
+        "Climatisation target temperature",
+        Kind.FLOAT,
+        "°C",
         policy=Policy.AGREE,
-        note="Two identical copies, value 120. Unit unknown (possibly 0.1 °C or an "
-        "encoded value); exposed raw without a unit.",
+        scale=0.1,
+        offset=10.0,
+        note="Encoded as tenths of a degree above 10 °C: raw 120 = 22.0 °C (Tavascan, "
+        "confirmed on the display), raw 115 = 21.5 °C (Born, matches the user's setting).",
     ),
     # Lights
     Slot(
