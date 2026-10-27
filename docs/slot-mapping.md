@@ -25,7 +25,7 @@ parser (`custom_components/vag_data_act/parser.py`, table in `slots.py`) resolve
 | Slot | Field | Key | Note |
 |---|---|---|---|
 | `soc` | `battery_state_report.soc` | `506cb83e-…` | The only SoC source. Checked against `battery_level_HV.value` (23.0) and `energy_contents` 167.5/773.5 = 21.66 % (0.1 kWh units). Deviation > 3 % → no value, ambiguity `soc`. |
-| `range` | `value` | `0ca40e18-…` | Bare field name without context. Mapped by key only; evcc (`vehicle/vw/eudataact/types.go`, `KeyRangeID3`) documents the same key as the MEB range. 90 km at 23 % is plausible. **Needs confirmation against the vehicle display.** |
+| `range` | `value` | `0ca40e18-…` | Bare field name without context. Mapped by key only; evcc (`vehicle/vw/eudataact/types.go`, `KeyRangeID3`) documents the same key as the MEB range. Confirmed live (2026-10-27): the Tavascan display showed 90 km at 23 %. |
 | `charging_error_text` | `error_description` | `0a7ecca3-…` | From `RbcErrorReport_0`; `error_number` 28 equals `charging_state_report.error_code` 28. The bare `error_code` = `#0` is a different field and stays unmapped. |
 | `vehicle_time` | `instrument_cluster_time` | `d8d3e58b-…` | Local vehicle time with offset. The only value that differs between the fixture generations (17:50:59+01:00 → 18:45:15+01:00). |
 

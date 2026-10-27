@@ -452,3 +452,26 @@ def parse_dataset(
     """Parse a dataset JSON document (bytes, text or already-decoded dict)."""
     vin, points = load_points(document)
     return parse_points(vin, points, key_overrides)
+
+
+def summarize_points(points: list[Point]) -> dict[str, Any]:
+    """Compact description of a dataset for the ``scan_datasets`` diagnostic.
+
+    Reports the point count, whether the SoC key/field is present, the set of report
+    ``message_id`` values and the field names grouped by their first path segment
+    (``battery_state_report`` -> 7 fields ...). Pure Python, no slot resolution.
+    """
+    fields = sorted({p.field for p in points})
+    groups: dict[str, int] = defaultdict(int)
+    for name in fields:
+        groups[name.split(".", 1)[0] if "." in name else "<bare>"] += 1
+    return {
+        "points": len(points),
+        "fields": len(fields),
+        "has_soc": any(p.field == "battery_state_report.soc" for p in points),
+        "has_charging_state": any(
+            p.field == "charging_state_report.current_charge_state" for p in points
+        ),
+        "message_ids": sorted({p.value for p in points if p.field == "message_id"}),
+        "field_groups": dict(sorted(groups.items())),
+    }

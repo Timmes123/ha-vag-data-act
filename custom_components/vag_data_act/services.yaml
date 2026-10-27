@@ -5,3 +5,10 @@ refresh_now:
       selector:
         config_entry:
           integration: vag_data_act
+scan_datasets:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: vag_data_act

@@ -243,6 +243,16 @@
           "description": "Auf ein Fahrzeug begrenzen (Standard: alle)."
         }
       }
+    },
+    "scan_datasets": {
+      "name": "Datensätze scannen",
+      "description": "Diagnose: lädt jeden gelisteten Datensatz und loggt pro Datei inneren Namen, Hash, Punktzahl und ob SoC-/Lade-Reports enthalten sind.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Config-Eintrag",
+          "description": "Auf ein Fahrzeug begrenzen (Standard: alle)."
+        }
+      }
     }
   }
 }

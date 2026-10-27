@@ -60,3 +60,4 @@ ISSUE_AUTH_FAILED = "auth_failed"
 ISSUE_CONSENT_REQUIRED = "consent_required"
 
 SERVICE_REFRESH_NOW = "refresh_now"
+SERVICE_SCAN_DATASETS = "scan_datasets"

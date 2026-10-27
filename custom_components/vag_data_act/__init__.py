@@ -30,6 +30,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL_MINUTES,
     DOMAIN,
     SERVICE_REFRESH_NOW,
+    SERVICE_SCAN_DATASETS,
 )
 from .coordinator import VagDataActCoordinator
 
@@ -120,7 +121,25 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             if entry.state.recoverable and hasattr(entry, "runtime_data"):
                 await entry.runtime_data.async_request_refresh()
 
+    async def _scan_datasets(call: ServiceCall) -> None:
+        """Diagnostic: download every listed dataset and log what each one contains."""
+        for entry in _entries(call):
+            await entry.runtime_data.async_scan_datasets()
+
+    def _entries(call: ServiceCall) -> list[ConfigEntry]:
+        entries = hass.config_entries.async_entries(DOMAIN)
+        if entry_id := call.data.get("config_entry_id"):
+            entries = [e for e in entries if e.entry_id == entry_id]
+            if not entries:
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN, translation_key="unknown_entry"
+                )
+        return [e for e in entries if e.state.recoverable and hasattr(e, "runtime_data")]
+
     hass.services.async_register(DOMAIN, SERVICE_REFRESH_NOW, _refresh_now, schema=SERVICE_SCHEMA)
+    hass.services.async_register(
+        DOMAIN, SERVICE_SCAN_DATASETS, _scan_datasets, schema=SERVICE_SCHEMA
+    )
     return True
 
 

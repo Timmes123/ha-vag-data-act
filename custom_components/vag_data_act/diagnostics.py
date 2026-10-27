@@ -56,6 +56,7 @@ async def async_get_config_entry_diagnostics(
             else None,
             "key_overrides": data.key_overrides,
             "data_request": _hide_vin_deep(data.request_metadata, vin),
+            "last_scan": _hide_vin_deep(data.last_scan, vin),
         },
         "login_hops": [
             {"method": h.method, "url": redact_url(h.url), "status": h.status}
