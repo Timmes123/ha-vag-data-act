@@ -234,3 +234,36 @@ def test_slot_table_consistency():
     assert len(names) == len(set(names))
     keys = [s.key for s in SLOTS if s.key]
     assert len(keys) == len(set(keys))
+
+
+def test_single_copy_with_foreign_key_is_shared_not_learned():
+    """Born: only one ``settings.target_soc`` and it carries the effective-target key."""
+    d = _raw(F180109)
+    d["Data"] = [p for p in d["Data"] if p["key"] != "e21d4d25-98bc-3016-a234-1ad061cc313b"]
+    parsed = parse_dataset(d)
+    user, eff = parsed.values["target_soc_user"], parsed.values["target_soc_effective"]
+    assert eff.value == 80 and eff.status == "ok"
+    assert user.value == 80 and user.status == "shared"
+    assert user.key == "b3b04f31-b10e-38aa-b8ad-c0da7c06caea"
+    assert parsed.learned_keys == {}, (
+        "the effective-target key must not be learned for the user slot"
+    )
+    # an override learned by 0.1.0 is ignored as well
+    parsed2 = parse_dataset(
+        d, key_overrides={"target_soc_user": "b3b04f31-b10e-38aa-b8ad-c0da7c06caea"}
+    )
+    assert parsed2.values["target_soc_user"].status == "shared"
+    assert parsed2.learned_keys == {}
+
+
+def test_foreign_key_overrides_helper():
+    from custom_components.vag_data_act.slots import foreign_key_overrides
+
+    overrides = {
+        "target_soc_user": "b3b04f31-b10e-38aa-b8ad-c0da7c06caea",  # effective-target key
+        "soc": "00000000-0000-3000-8000-000000000000",  # unknown key: fine
+        "range": "0ca40e18-0564-3eda-bcc0-7aee9ef44f04",  # its own key: fine
+    }
+    assert foreign_key_overrides(overrides) == {
+        "target_soc_user": "b3b04f31-b10e-38aa-b8ad-c0da7c06caea"
+    }

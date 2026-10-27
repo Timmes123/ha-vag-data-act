@@ -27,20 +27,23 @@ custom repository. Sibling projects with the same conventions: `../HA-betterTodo
   repo only) and `pytest -q` (parser/API/HA smoke tests). Local: `ruff check . && pytest -q`
   (needs `pytest-homeassistant-custom-component`, Python 3.14).
 
-## Project status (2026-10-27)
+## Project status (2026-10-27, v0.1.1)
 
-- v0.1.0 released and installed on the user's HA via HACS (custom repository), HA restarted,
-  integration loads, log level DEBUG set for `vag_data_act`. TommiG1 entry "Tavascan"
-  (`cupra_eu_data_act`, entry 01KTV0NCKZYSN7HD4PN1STGJDR) disabled, "Born" entry was already disabled.
-- The user enters the portal credentials **only in the HA UI** (never in chat). Next: user adds the
-  config entries for Born and Tavascan, then verify logs (login hops, dataset download), health
-  entities (`login_status`, `data_age_minutes`, `dataset`), SoC/odometer plausibility vs. fixtures.
-- Parser findings are documented in `parser.py` (module docstring) and `docs/slot-mapping.md`.
-  Mileage is identical across the three fixture contents; only `instrument_cluster_time` differs.
-- Open points (README "Known gaps"): `climatisation_state` / `remaining_climate_time` key
-  attribution, `range` = bare `value` key `0ca40e18-…` (unverified against the car),
-  `climatisation_settings.target_temperature` unit, Born keys (learned per VIN if they differ).
-- The cloud session cannot push tags or set repo topics (proxy blocks); a local session with the
-  user's own `gh` login can (`gh repo edit --add-topic …`). The HACS topics check is ignored in CI.
-- Step 5 of SPEC.md (evcc → custom vehicle via HA, remove TommiG1) is prepared in the README only;
-  do not execute it before both vehicles are healthy here.
+- v0.1.0 installed via HACS, both config entries (Born …0897, Tavascan …7134) created by the
+  user in the HA UI (credentials only there, never in chat). Login works for both accounts
+  (Auth0 chain → `/services/callbacklogin`), datasets download, `login_status = ok`.
+- Tavascan: 171 points, values identical to the fixtures (SoC 23, odometer 10044, range 90,
+  2 ambiguities climatisation). Born: only 72 points, **no battery/charging reports** (SoC,
+  range, charging state, energy `unknown`); odometer, lock, lights, temperatures, settings OK.
+  v0.1.1 logs/exposes the portal data request metadata (`data_request` attribute of the
+  `dataset` sensor) to compare both vehicles' portal configuration.
+- v0.1.1: `result_state` JWT redacted, foreign-slot keys never learned (`status: shared`),
+  German names `Ladestand (SoC)` / `Ladestatus`, HACS topics check enabled.
+- Open (README "Known gaps"): Born missing clusters, `climatisation_state` /
+  `remaining_climate_time` attribution (Born delivers only the `f95799d0`/`3c19831c` pair →
+  likely actual state), `range` vs. car display, `climatisation_settings.target_temperature`
+  unit (Tavascan 120, Born 115).
+- The README must not mention other integrations or tools the user migrates from; the
+  switch-over of the user's other consumers is prepared outside the repository and executed
+  only after both vehicles are healthy here.
+- Repo topics set (home-assistant, hacs, integration, cupra, eu-data-act).

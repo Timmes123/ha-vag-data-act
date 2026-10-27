@@ -463,3 +463,20 @@ class SlotOverrides:
 def all_known_keys() -> frozenset[str]:
     """Return every key hard-coded in the slot table."""
     return frozenset(slot.key for slot in SLOTS if slot.key)
+
+
+SLOT_BY_KEY: dict[str, str] = {slot.key: slot.name for slot in SLOTS if slot.key}
+
+
+def owner_of_key(key: str) -> str | None:
+    """Name of the slot whose table key this is (None if unknown)."""
+    return SLOT_BY_KEY.get(key)
+
+
+def foreign_key_overrides(overrides: dict[str, str]) -> dict[str, str]:
+    """Overrides whose key is hard-coded for a *different* slot (must not be learned)."""
+    return {
+        name: key
+        for name, key in overrides.items()
+        if (owner := owner_of_key(key)) is not None and owner != name
+    }

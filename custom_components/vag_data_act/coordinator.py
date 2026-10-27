@@ -38,6 +38,7 @@ from .const import (
     MAX_OUTAGE_BACKOFF_MINUTES,
 )
 from .parser import ParsedDataset, parse_dataset
+from .slots import foreign_key_overrides
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -61,6 +62,7 @@ class VehicleData:
     dataset_count: int = 0
     identifier: str | None = None
     key_overrides: dict[str, str] = field(default_factory=dict)
+    request_metadata: dict[str, Any] = field(default_factory=dict)
 
     @property
     def last_vehicle_report(self) -> datetime | None:
@@ -100,6 +102,12 @@ class VagDataActCoordinator(DataUpdateCoordinator[VehicleData]):
     async def async_load_state(self) -> None:
         stored = await self._store.async_load() or {}
         self.data.key_overrides = dict(stored.get("key_overrides", {}))
+        for name, key in foreign_key_overrides(self.data.key_overrides).items():
+            # Learned before 0.1.1: a key that belongs to another slot of the same field
+            # (Born: target_soc_user -> effective-target key). Never trust it.
+            _LOGGER.info("dropping learned key %s for %s (belongs to another slot)", key, name)
+            self.data.key_overrides.pop(name)
+        self.data.request_metadata = dict(stored.get("request_metadata", {}))
         self.data.identifier = stored.get("identifier")
         self.data.dataset_hash = stored.get("dataset_hash")
         self.data.inner_name = stored.get("inner_name")
@@ -122,6 +130,7 @@ class VagDataActCoordinator(DataUpdateCoordinator[VehicleData]):
             {
                 "key_overrides": self.data.key_overrides,
                 "identifier": self.data.identifier,
+                "request_metadata": self.data.request_metadata,
                 "dataset_hash": self.data.dataset_hash,
                 "inner_name": self.data.inner_name,
                 "dataset_name": self.data.dataset_name,
@@ -152,8 +161,9 @@ class VagDataActCoordinator(DataUpdateCoordinator[VehicleData]):
         data.last_attempt = dt_util.utcnow()
         data.dataset_changed = False
         try:
-            if data.identifier is None:
+            if data.identifier is None or not data.request_metadata:
                 data.identifier = await self.client.async_get_identifier(self.vin)
+                data.request_metadata = dict(self.client.request_metadata.get(self.vin, {}))
             datasets = await self.client.async_list_datasets(self.vin, data.identifier)
             data.dataset_count = len(datasets)
             newest = newest_dataset(datasets)

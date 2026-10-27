@@ -49,6 +49,7 @@ from .slots import (
     Kind,
     Policy,
     Slot,
+    owner_of_key,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -80,7 +81,7 @@ class SlotValue:
     field: str
     unit: str | None
     candidates: dict[str, str] = field(default_factory=dict)  # key -> raw (multi-slot)
-    status: str = "ok"  # ok | missing | ambiguous | implausible | invalid
+    status: str = "ok"  # ok | shared | missing | ambiguous | implausible | invalid
 
 
 @dataclass
@@ -218,6 +219,10 @@ def _resolve_keyed(
     ambiguities: list[Ambiguity],
 ) -> SlotValue:
     key = key_override or slot.key
+    if key_override and (owner := owner_of_key(key_override)) not in (None, slot.name):
+        # A learned key that belongs to another slot is never trusted (see below).
+        _LOGGER.debug("slot %s: ignoring override %s owned by %s", slot.name, key_override, owner)
+        key = slot.key
     point = by_key.get(key) if key else None
     if point is not None:
         if point.field != slot.field:
@@ -239,8 +244,18 @@ def _resolve_keyed(
         return SlotValue(slot.name, None, None, None, slot.field, slot.unit, status="missing")
     distinct = {p.value for p in candidates}
     if len(candidates) == 1:
-        learned[slot.name] = candidates[0].key
-        return _finish(slot, candidates[0].key, candidates[0].value)
+        single = candidates[0]
+        owner = owner_of_key(single.key)
+        if owner is not None and owner != slot.name:
+            # The only copy of this field is the key of another slot (Born: a single
+            # ``settings.target_soc`` carrying the effective-target key). The value is
+            # shared with that slot, but the key is *not* learned for this one.
+            sv = _finish(slot, single.key, single.value)
+            if sv.status == "ok":
+                sv.status = "shared"
+            return sv
+        learned[slot.name] = single.key
+        return _finish(slot, single.key, single.value)
     if len(distinct) == 1:
         # identical copies: any of them is fine, but do not learn a key
         return _finish(

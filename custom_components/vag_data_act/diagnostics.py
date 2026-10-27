@@ -16,6 +16,16 @@ from .const import CONF_VIN
 REDACT = {CONF_EMAIL, CONF_PASSWORD, CONF_VIN, "vin", "identifier", "user_id", "cookies"}
 
 
+def _hide_vin_deep(value: Any, vin: str) -> Any:
+    if isinstance(value, str):
+        return value.replace(vin, "**VIN**")
+    if isinstance(value, dict):
+        return {k: _hide_vin_deep(v, vin) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_hide_vin_deep(v, vin) for v in value]
+    return value
+
+
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: VagDataActConfigEntry
 ) -> dict[str, Any]:
@@ -45,6 +55,7 @@ async def async_get_config_entry_diagnostics(
             if coordinator.update_interval
             else None,
             "key_overrides": data.key_overrides,
+            "data_request": _hide_vin_deep(data.request_metadata, vin),
         },
         "login_hops": [
             {"method": h.method, "url": redact_url(h.url), "status": h.status}

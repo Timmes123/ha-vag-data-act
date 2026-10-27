@@ -63,7 +63,7 @@
   "entity": {
     "sensor": {
       "soc": {
-        "name": "Ladezustand"
+        "name": "Ladestand (SoC)"
       },
       "range": {
         "name": "Reichweite"
@@ -81,7 +81,7 @@
         "name": "Pflegemodus-Schwelle"
       },
       "charging_state": {
-        "name": "Ladezustand (Status)"
+        "name": "Ladestatus"
       },
       "charging_error_code": {
         "name": "Ladefehlercode"
