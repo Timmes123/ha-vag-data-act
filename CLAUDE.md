@@ -46,14 +46,17 @@ via logs/entities over MCP. Portal credentials exist only in the HA UI, never in
   project history – that stays in chat/memory.
 - Keep `docs/slot-mapping.md` up to date with every verified key finding.
 
-## Project status (2026-10-28, v0.2.0)
+## Project status (2026-10-28, v0.2.1 pre-release)
 - Both vehicles (two portal accounts) log in (Auth0 chain → `/services/callbacklogin`), sessions
   are reused across polls and restarts (cookies in `.storage`).
 - **Packages are partial** (live scans of 30+30 packages via service `scan_datasets`): Born 6…93
   points, SoC in 11/30; Tavascan 143…171, SoC missing in 3 during a trip. Both portal data
   requests are identical (All Data, 15 min). Portal rate-limits (HTTP 429) after ~25 downloads.
   v0.2.0 therefore downloads every unseen package (1 s apart, stop at 429) and merges points by
-  key into a persistent store with per-value provenance.
+  key into a persistent store with per-value provenance. v0.2.1 (store migration fix) is live:
+  both entries loaded, 30 packages each backfilled without 429, Born shows SoC 51 % / 135 km /
+  CHARGE_STATE_CHARGING_ERROR from the 19:47Z package. All releases are pre-releases; no stable
+  has been promoted yet.
 - Verified live: range key `0ca40e18` = display (90 km at 23 %), Tavascan climate target 22 °C =
   raw 120 (Born raw 115, its display value still needed for the unit).
 - Open: `climatisation_state`/`remaining_climate_time` key attribution (Born delivers only the
