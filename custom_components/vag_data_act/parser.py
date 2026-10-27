@@ -30,7 +30,14 @@ Findings verified on the 14 Tavascan fixtures in ``tests/fixtures/raw`` (see
   ``max`` is mandatory. ZIP timestamps (16:10Z … 18:01Z all carrying the same
   ``…180109`` file) say nothing about data freshness.
 * The data points carry no link to their report, therefore ``car_captured_at`` of a
-  value is the dataset-wide maximum, not a per-point time.
+  value is the maximum report time of the *package the point came from*, not a
+  per-point time.
+* Packages are partial (live scan of 30 Born packages, 2026-10-27): consecutive ZIPs of
+  the same vehicle held 6, 16, 67, 72, 74, 88 or 93 points with different report sets;
+  the SoC/charging reports were present in only 11 of 30. A package therefore never
+  replaces the previous state: every unseen package is downloaded and its points are
+  merged by key into a persistent store (``merge_points``), newer packages overwrite,
+  points missing from a newer package keep their old value and their own capture time.
 """
 
 from __future__ import annotations
@@ -38,7 +45,7 @@ from __future__ import annotations
 import json
 import logging
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from typing import Any
 
@@ -63,11 +70,13 @@ class ParseError(ValueError):
 
 @dataclass(frozen=True)
 class Point:
-    """One raw data point."""
+    """One raw data point, optionally stamped with the package it came from."""
 
     key: str
     field: str
     value: str
+    captured_at: datetime | None = None  # max report time of the source package
+    source: str | None = None  # inner file name of the source package
 
 
 @dataclass
@@ -82,6 +91,8 @@ class SlotValue:
     unit: str | None
     candidates: dict[str, str] = field(default_factory=dict)  # key -> raw (multi-slot)
     status: str = "ok"  # ok | shared | missing | ambiguous | implausible | invalid
+    captured_at: datetime | None = None  # capture time of the package the value came from
+    source: str | None = None  # inner file name of that package
 
 
 @dataclass
@@ -236,7 +247,7 @@ def _resolve_keyed(
                 )
             )
             return SlotValue(slot.name, None, None, None, slot.field, slot.unit, status="ambiguous")
-        return _finish(slot, point.key, point.value)
+        return _finish(slot, point.key, point.value, points=[point])
 
     # Key unknown for this vehicle: fall back to the field name if it is unambiguous.
     candidates = by_field.get(slot.field, [])
@@ -250,12 +261,12 @@ def _resolve_keyed(
             # The only copy of this field is the key of another slot (Born: a single
             # ``settings.target_soc`` carrying the effective-target key). The value is
             # shared with that slot, but the key is *not* learned for this one.
-            sv = _finish(slot, single.key, single.value)
+            sv = _finish(slot, single.key, single.value, points=[single])
             if sv.status == "ok":
                 sv.status = "shared"
             return sv
         learned[slot.name] = single.key
-        return _finish(slot, single.key, single.value)
+        return _finish(slot, single.key, single.value, points=[single])
     if len(distinct) == 1:
         # identical copies: any of them is fine, but do not learn a key
         return _finish(
@@ -263,6 +274,7 @@ def _resolve_keyed(
             None,
             candidates[0].value,
             candidates={p.key: p.value for p in candidates},
+            points=candidates,
         )
     ambiguities.append(
         Ambiguity(
@@ -307,11 +319,11 @@ def _resolve_multi(
             return SlotValue(
                 slot.name, None, None, None, slot.field, slot.unit, cand_map, status="invalid"
             )
-        return _finish(slot, best.key, best.value, candidates=cand_map)
+        return _finish(slot, best.key, best.value, candidates=cand_map, points=[best])
     # Policy.AGREE
     distinct = {p.value for p in candidates}
     if len(distinct) == 1:
-        return _finish(slot, None, candidates[0].value, candidates=cand_map)
+        return _finish(slot, None, candidates[0].value, candidates=cand_map, points=candidates)
     warnings.append(f"{slot.field}: copies disagree {cand_map}")
     ambiguities.append(Ambiguity(slot.name, slot.field, cand_map, "copies disagree"))
     return SlotValue(
@@ -320,9 +332,16 @@ def _resolve_multi(
 
 
 def _finish(
-    slot: Slot, key: str | None, raw: str, candidates: dict[str, str] | None = None
+    slot: Slot,
+    key: str | None,
+    raw: str,
+    candidates: dict[str, str] | None = None,
+    *,
+    points: list[Point] | tuple[Point, ...] = (),
 ) -> SlotValue:
     value = convert(slot, raw)
+    stamped = [p for p in points if p.captured_at is not None]
+    newest = max(stamped, key=lambda p: p.captured_at) if stamped else None  # type: ignore[arg-type, return-value]
     return SlotValue(
         slot.name,
         value,
@@ -332,6 +351,8 @@ def _finish(
         slot.unit,
         candidates=candidates or {},
         status="ok" if value is not None else "invalid",
+        captured_at=newest.captured_at if newest else None,
+        source=newest.source if newest else None,
     )
 
 
@@ -448,10 +469,80 @@ def parse_points(
 def parse_dataset(
     document: bytes | str | dict[str, Any],
     key_overrides: dict[str, str] | None = None,
+    source: str | None = None,
 ) -> ParsedDataset:
-    """Parse a dataset JSON document (bytes, text or already-decoded dict)."""
+    """Parse one dataset JSON document (bytes, text or already-decoded dict).
+
+    Every point is stamped with the package's capture time (max report time) and
+    ``source`` so that the slot values carry their provenance.
+    """
     vin, points = load_points(document)
-    return parse_points(vin, points, key_overrides)
+    return parse_points(vin, stamp_points(points, source), key_overrides)
+
+
+# --- package merging ------------------------------------------------------------------
+
+
+def package_capture_time(points: list[Point]) -> datetime | None:
+    """Newest report time (``car_captured_*``) inside one package."""
+    times = [
+        ts for p in points if p.field in REPORT_TIME_FIELDS if (ts := parse_timestamp(p.value))
+    ]
+    return max(times) if times else None
+
+
+def stamp_points(
+    points: list[Point], source: str | None, captured_at: datetime | None = None
+) -> list[Point]:
+    """Return the points stamped with ``source`` and the package capture time."""
+    when = captured_at or package_capture_time(points)
+    return [replace(p, captured_at=when, source=source) for p in points]
+
+
+def merge_points(store: dict[str, Point], points: list[Point]) -> int:
+    """Merge a (stamped) package into the key -> point store.
+
+    Newer packages must be merged after older ones: every incoming key overwrites.
+    Keys absent from the package keep their stored point. Returns the number of keys
+    whose field or value changed (new keys count as changed).
+    """
+    changed = 0
+    for p in points:
+        old = store.get(p.key)
+        if old is None or old.value != p.value or old.field != p.field:
+            changed += 1
+        store[p.key] = p
+    return changed
+
+
+def points_to_json(store: dict[str, Point]) -> list[dict[str, Any]]:
+    return [
+        {
+            "key": p.key,
+            "field": p.field,
+            "value": p.value,
+            "captured_at": p.captured_at.isoformat() if p.captured_at else None,
+            "source": p.source,
+        }
+        for p in store.values()
+    ]
+
+
+def points_from_json(items: list[dict[str, Any]]) -> dict[str, Point]:
+    store: dict[str, Point] = {}
+    for item in items:
+        try:
+            p = Point(
+                key=str(item["key"]),
+                field=str(item["field"]),
+                value=str(item["value"]),
+                captured_at=parse_timestamp(item.get("captured_at") or ""),
+                source=item.get("source"),
+            )
+        except KeyError, TypeError:
+            continue
+        store[p.key] = p
+    return store
 
 
 def summarize_points(points: list[Point]) -> dict[str, Any]:

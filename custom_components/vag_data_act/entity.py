@@ -8,7 +8,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_VIN, DOMAIN
-from .coordinator import VagDataActCoordinator, VehicleData
+from .coordinator import VagDataActCoordinator, VehicleData, minutes_since
 from .parser import SlotValue
 
 
@@ -40,11 +40,15 @@ class VagDataActEntity(CoordinatorEntity[VagDataActCoordinator]):
 
     def slot_attributes(self, name: str) -> dict[str, Any]:
         sv = self.slot(name)
+        # Capture time of the package the value came from; packages are partial, so a
+        # value may be older than the vehicle's newest report.
+        captured = (sv.captured_at if sv else None) or self.data.last_vehicle_report
         attrs: dict[str, Any] = {
             "source_key": sv.key if sv else None,
             "source_field": sv.field if sv else None,
-            "car_captured_at": self.data.last_vehicle_report,
-            "age_minutes": self.data.data_age_minutes(),
+            "source_dataset": sv.source if sv else None,
+            "car_captured_at": captured,
+            "age_minutes": minutes_since(captured),
         }
         if sv:
             attrs["status"] = sv.status
