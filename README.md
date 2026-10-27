@@ -42,11 +42,9 @@ settings jobs), so a new ZIP does **not** mean new data. The integration
 
 ## Only one client!
 
-Parallel portal sessions (e.g. this integration **and** evcc or another HA integration
-using the same account) make the portal data unreliable. Run exactly one client per
-account. Disable the evcc vehicle / other integrations before enabling this one.
-Migration from evcc/TommiG1 is described below, but do it *after* this integration is
-healthy.
+Parallel portal sessions with the same account make the portal data unreliable. Run
+exactly one client per account: this integration should be the only program that logs
+in to the portal with these credentials.
 
 ## Entities
 
@@ -96,7 +94,7 @@ start/finish, and the health sensors below.
 | `last_vehicle_report` | newest `car_captured_time` in the dataset (**not** the ZIP time) |
 | `data_age_minutes` | minutes since the last vehicle report – the staleness indicator |
 | `dataset_changed` | whether the last poll delivered new content |
-| `dataset` | inner file name; attributes: ZIP name, SHA-256, datasets listed, last error |
+| `dataset` | inner file name; attributes: ZIP name, SHA-256, datasets listed, last error, `data_request` (the portal's data request metadata: interval, requested data clusters) |
 | `ambiguous_fields` | count; attributes list every contradicting slot with its candidates |
 | `unmapped_points` | count; attributes list every unknown key with field and value |
 
@@ -122,14 +120,20 @@ files. Use `-v` for the full redirect chain.
   against the vehicle display yet.
 * `climatisation_settings.target_temperature` = 120: unit unknown, exposed raw.
 * Keys were verified on a Cupra Tavascan. For other vehicles unknown keys fall back to
-  unique field names and are learned per VIN (`.storage/vag_data_act.<VIN>`).
-
-## Migration from evcc / TommiG1 (do this last, not in parallel)
-
-1. Make sure both vehicles show `login_status = ok` and plausible SoC/odometer here.
-2. evcc: switch the vehicle to `type: custom` and read SoC/range/status from HA via the
-   `http` plugin (`/api/states/sensor.<vehicle>_state_of_charge`, …) using a long-lived token.
-3. Remove the `cupra_eu_data_act` config entries and the TommiG1 integration.
+  unique field names and are learned per VIN (`.storage/vag_data_act.<VIN>`). A key that
+  the table already assigns to *another* slot is never learned: if a vehicle delivers only
+  one `settings.target_soc` and it carries the effective-target key, the user target shows
+  the same value with `status: shared`.
+* **Cupra Born (2026-10-27):** the live dataset holds 72 points instead of 171. It lacks
+  the battery/charging reports entirely (`battery_state_report.*`,
+  `charging_state_report.current_charge_state`, `energy_contents.*`, `value`/range,
+  `outdoor_temperature`, `battery_care_mode.*`), so SoC, range, charging state and energy
+  are `unknown`, while odometer, lock state, lights, temperatures, climatisation and the
+  charge settings are delivered. Whether the portal data request for that vehicle is
+  really *All Data* (compare the `data_request` attribute of the `dataset` sensor between
+  the vehicles) or the vehicle simply does not report these clusters is being verified.
+* Entity names: `state_of_charge` is the SoC in percent, `charging_state` the enum
+  (`CHARGE_STATE_…`).
 
 ## Development
 

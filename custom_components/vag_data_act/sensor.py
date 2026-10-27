@@ -285,6 +285,7 @@ def _dataset_attrs(data: VehicleData) -> dict[str, Any]:
         "points": data.parsed.point_count if data.parsed else None,
         "last_attempt": data.last_attempt,
         "last_error": data.last_error,
+        "data_request": data.request_metadata,
     }
 
 

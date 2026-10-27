@@ -214,3 +214,15 @@ async def test_401_triggers_single_reauth(portal):
     datasets = await client.async_list_datasets("VSSZZZKRXSA000001", "ID-1")
     assert len(datasets) == 4
     assert client._login_generation == 2
+
+
+def test_redact_url_hides_tokens():
+    url = (
+        "https://identity.vwgroup.io/continue?state=abc&result_state=eyJhbGciOi.payload.sig"
+        "&relayState=xyz&code=123&keep=me"
+    )
+    red = api.redact_url(url)
+    for secret in ("abc", "eyJhbGciOi", "xyz", "123"):
+        assert secret not in red
+    assert "keep=me" in red
+    assert api.redact_url("https://example.com/path") == "https://example.com/path"

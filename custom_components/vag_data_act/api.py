@@ -186,6 +186,13 @@ def parse_login_form(html: str) -> _FormParser:
     return p
 
 
+# Query parameters that carry codes, states or tokens (``result_state`` is a JWT with the
+# Auth0 subject in it).
+REDACTED_QUERY_KEYS = frozenset(
+    {"code", "state", "nonce", "hmac", "relaystate", "result_state", "id_token", "access_token"}
+)
+
+
 def redact_url(url: str) -> str:
     """Hide code/state/token-like query values for logging."""
     parsed = urlparse(url)
@@ -193,8 +200,7 @@ def redact_url(url: str) -> str:
         return url
     q = parse_qs(parsed.query, keep_blank_values=True)
     redacted = {
-        k: (["<redacted>"] if k.lower() in {"code", "state", "nonce", "hmac", "relaystate"} else v)
-        for k, v in q.items()
+        k: (["<redacted>"] if k.lower() in REDACTED_QUERY_KEYS else v) for k, v in q.items()
     }
     return parsed._replace(query=urlencode(redacted, doseq=True)).geturl()
 
@@ -272,6 +278,8 @@ class PortalClient:
         self._login_generation = 0
         self.logged_in = False
         self.last_login_hops: list[Hop] = []
+        # Data request metadata per VIN (``metadata/partial`` minus the Identifier).
+        self.request_metadata: dict[str, dict[str, Any]] = {}
         self.on_session_changed: Any = None  # async callback after a successful login
 
     # -- helpers ----------------------------------------------------------------------
@@ -556,10 +564,19 @@ class PortalClient:
         return vehicles
 
     async def async_get_identifier(self, vin: str) -> str:
+        """Return the identifier of the continuous data request.
+
+        The remaining metadata (interval, requested data clusters, ...) is kept in
+        ``request_metadata[vin]`` and logged, so that vehicles delivering fewer data
+        points (e.g. no battery report) can be compared with the portal configuration.
+        """
         data = await self._get_json(METADATA_PATH.format(vin=vin), allow_404=True)
         identifier = (data or {}).get("Identifier") if isinstance(data, dict) else None
         if not identifier:
             raise NotConfigured("no continuous data request configured in the portal")
+        meta = {k: v for k, v in data.items() if k != "Identifier"}
+        self.request_metadata[vin] = meta
+        _LOGGER.info("data request for ...%s: %s", vin[-4:], _hide(meta, vin))
         return str(identifier)
 
     async def async_list_datasets(self, vin: str, identifier: str) -> list[DatasetInfo]:
@@ -595,6 +612,17 @@ class PortalClient:
             headers={"filename": name, "type": "partial", "Accept": "*/*"},
         )
         return unpack_dataset(name, body)
+
+
+def _hide(value: Any, vin: str) -> Any:
+    """Replace the VIN in a JSON-like structure (for logging)."""
+    if isinstance(value, str):
+        return value.replace(vin, "<VIN>")
+    if isinstance(value, dict):
+        return {k: _hide(v, vin) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_hide(v, vin) for v in value]
+    return value
 
 
 def _is_portal_callback(url: str) -> bool:

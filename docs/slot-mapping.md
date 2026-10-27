@@ -35,3 +35,27 @@ If a slot's key is not present in a dataset (e.g. the Born), the parser uses the
 name **only if it occurs exactly once**; the found key is then learned per VIN and
 persisted by the integration. Field names with several different values are reported
 as ambiguous, never guessed. No substring matching anywhere.
+
+Exception: if the single copy carries a key that the table assigns to *another* slot of
+the same field, nothing is learned. The value is reused with `status: shared`. Live
+example (Born, 2026-10-27): only one `settings.target_soc` = 90 with the effective-target
+key `b3b04f31-…`; `target_soc_user` shows 90 / `shared`, `target_soc_effective` 90 / `ok`.
+
+## Cupra Born dataset (live, 2026-10-27)
+
+72 points, reports `RPT_0`, `RPT_1`, `RbcErrorReport_7`, `RpcSettingsReport_2`,
+`RpcStateReport_0`, `RpcWindowHeatingStateReport_1`. Present with the *same keys* as the
+Tavascan: `mileage.value` (both keys), `locked`, `open`, `parking_light_*`,
+`min/max_temperature`, `window_heating_state`, `instrument_cluster_time`,
+`profile_state_report.instrument_cluster_time`, `charging_state_report.error_code`,
+`error_description`, `error_number`, `settings.max_charge_current_ac` (one copy),
+`settings.auto_unlock_ac` (one copy), `settings.charge_mode_selection` (one copy),
+`climatisation_settings.target_temperature` (one copy, 115),
+`climatisation_state` (only `f95799d0-…` = OFF) and `remaining_climate_time` (only
+`3c19831c-…` = 0s). Missing: every `battery_state_report.*`, `battery_level_HV.*`,
+`energy_contents.*`, `charging_state_report.*` except `error_code`, `value` (range),
+`outdoor_temperature`, `battery_care_mode.*`, the timer information and the second
+`settings.target_soc` key. The Born's `climatisation_state`/`remaining_climate_time` keys
+are the `f95799d0-…`/`3c19831c-…` pair, which supports the reading that this pair is the
+*actual state* (`RpcStateReport`) and `1472bf20-…`/`0f3fab0c-…` belong to
+`RpcStateReportForStartClimaJob` (last climatisation job) – still to be confirmed live.
