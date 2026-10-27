@@ -16,10 +16,16 @@ settings jobs), so a new ZIP does **not** mean new data. The integration
 
 1. logs in through the VW identity provider (Auth0 Universal Login) and keeps the session
    cookies in `.storage` – it does not log in on every poll,
-2. lists the datasets, downloads the newest one, unpacks the inner JSON and hashes it,
-3. re-parses and updates entities **only when the content changed**; otherwise the old
-   values stay and `data_age_minutes` grows,
-4. resolves every value by its stable portal `key` (never by position or substring),
+2. lists the packages and downloads **every package it has not processed yet**, oldest
+   first, throttled (the portal rate-limits after ~25 downloads; the rest follows on the
+   next poll),
+3. merges the points of each package **by key** into a persistent store: packages are
+   partial (a live scan showed 6 … 93 points per package, the battery/charging reports in
+   only a third of them), so a newer package overwrites what it contains and everything
+   else keeps its old value – with its own capture time,
+4. re-parses the merged store and updates entities only when a point changed; otherwise
+   the old values stay and `data_age_minutes` grows,
+5. resolves every value by its stable portal `key` (never by position or substring),
    see [docs/slot-mapping.md](docs/slot-mapping.md).
 
 ## Portal preparation (once, in the browser)
@@ -49,8 +55,9 @@ in to the portal with these credentials.
 ## Entities
 
 Vehicle values (device per VIN). Every value carries the attributes `source_key`,
-`source_field`, `raw_value`, `status`, `car_captured_at` and `age_minutes`; ambiguous
-slots additionally list all `candidates` (key → raw value).
+`source_field`, `source_dataset` (inner file of the package it came from), `raw_value`,
+`status`, `car_captured_at` (newest report time of that package) and `age_minutes`;
+ambiguous slots additionally list all `candidates` (key → raw value).
 
 | Entity | Source field | Unit / class | Notes |
 |---|---|---|---|
@@ -94,7 +101,7 @@ start/finish, and the health sensors below.
 | `last_vehicle_report` | newest `car_captured_time` in the dataset (**not** the ZIP time) |
 | `data_age_minutes` | minutes since the last vehicle report – the staleness indicator |
 | `dataset_changed` | whether the last poll delivered new content |
-| `dataset` | inner file name; attributes: ZIP name, SHA-256, datasets listed, last error, `data_request` (the portal's data request metadata: interval, requested data clusters) |
+| `dataset` | newest processed package; attributes: ZIP name, SHA-256, packages listed / processed in the last poll / pending (rate limit), point store size, last error, `data_request` (the portal's data request metadata) |
 | `ambiguous_fields` | count; attributes list every contradicting slot with its candidates |
 | `unmapped_points` | count; attributes list every unknown key with field and value |
 
@@ -124,15 +131,20 @@ files. Use `-v` for the full redirect chain.
   the table already assigns to *another* slot is never learned: if a vehicle delivers only
   one `settings.target_soc` and it carries the effective-target key, the user target shows
   the same value with `status: shared`.
-* **Cupra Born (2026-10-27):** the live dataset holds 72 points instead of 171. It lacks
-  the battery/charging reports entirely (`battery_state_report.*`,
-  `charging_state_report.current_charge_state`, `energy_contents.*`, `value`/range,
-  `outdoor_temperature`, `battery_care_mode.*`), so SoC, range, charging state and energy
-  are `unknown`, while odometer, lock state, lights, temperatures, climatisation and the
-  charge settings are delivered. The portal data requests of both vehicles are identical
-  (`data_request` attribute: *All Data* + Charging + …, 15 min, since June 2026), so the gap
-  is on the vehicle side: this Born does not report the battery/charging clusters through
-  the Data Act portal. Open: whether a charging session or a software update changes that.
+* **Packages are partial.** A scan of 30 consecutive Born packages (2026-10-27) found
+  6, 16, 67, 72, 74, 88 and 93 points per package with different report sets; the SoC and
+  charging reports were present in 11 of 30. The Tavascan showed the same during a trip
+  (143–162 points, three packages without SoC). Since v0.2.0 every unseen package is merged
+  by key, so values survive packages that lack them. A value's `car_captured_at` is the
+  newest report time of *its* package and can be older than `last_vehicle_report`.
+* **Rate limit:** the portal answers HTTP 429 after roughly 25 downloads in a row.
+  Downloads are spaced 1 s apart and stop at 429; `packages_pending` on the `dataset`
+  sensor shows what is left for the next poll.
+* **Package names are not final.** The portal can serve a placeholder (a copy of the newest
+  content) for a package whose own content arrives later; the 14 fixtures were downloaded
+  that way (8 ZIP names, one inner file). Packages are tracked by ZIP name, so such a
+  late-filled package is not fetched again – only intermediate history can be lost, never
+  the newest state.
 * `climatisation_state` / `remaining_climate_time` keys: the Born delivers only the
   `f95799d0-…` / `3c19831c-…` pair (from `RpcStateReport`), which suggests that pair is the
   actual state and `1472bf20-…` / `0f3fab0c-…` belong to the last climatisation job

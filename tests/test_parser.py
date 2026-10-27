@@ -278,3 +278,53 @@ def test_summarize_points_fixture():
     assert "RpcStateReport_4" in s["message_ids"]
     assert s["field_groups"]["battery_state_report"] == 6
     assert s["field_groups"]["<bare>"] > 10
+
+
+def test_merge_points_keeps_values_missing_from_newer_package():
+    from datetime import timedelta
+
+    from custom_components.vag_data_act.parser import (
+        load_points,
+        merge_points,
+        package_capture_time,
+        parse_points,
+        points_from_json,
+        points_to_json,
+        stamp_points,
+    )
+
+    _, full = load_points(F180109.read_bytes())
+    t_full = package_capture_time(full)
+    assert t_full == datetime(2026, 10, 27, 17, 46, 51, tzinfo=UTC)
+    # a later, partial package: no battery/charging/energy reports, odometer advanced
+    later = [
+        p
+        for p in full
+        if not p.field.startswith(
+            ("battery_state_report.", "charging_state_report.", "energy_contents.")
+        )
+        and p.field not in ("value", "battery_level_HV.value")
+    ]
+    later = [p if p.field != "mileage.value" else type(p)(p.key, p.field, "10100") for p in later]
+    t_later = t_full + timedelta(hours=2)
+
+    store: dict = {}
+    assert merge_points(store, stamp_points(full, "a.json", t_full)) == 171
+    changed = merge_points(store, stamp_points(later, "b.json", t_later))
+    assert changed == 2  # both mileage keys
+    assert len(store) == 171, "points absent from the newer package are kept"
+
+    parsed = parse_points("VIN", list(store.values()))
+    soc, odo = parsed.values["soc"], parsed.values["odometer"]
+    assert soc.value == 23 and soc.source == "a.json" and soc.captured_at == t_full
+    assert odo.value == 10100 and odo.source == "b.json" and odo.captured_at == t_later
+    assert parsed.last_vehicle_report == t_full, "report times come from the stored points"
+
+    # JSON round trip of the store
+    restored = points_from_json(points_to_json(store))
+    assert restored == store
+
+    # the single-dataset path stamps every value with the package time
+    single = parse_dataset(F180109.read_bytes(), source="x.json")
+    assert single.values["soc"].captured_at == t_full
+    assert single.values["soc"].source == "x.json"

@@ -27,16 +27,16 @@ custom repository. Sibling projects with the same conventions: `../HA-betterTodo
   repo only) and `pytest -q` (parser/API/HA smoke tests). Local: `ruff check . && pytest -q`
   (needs `pytest-homeassistant-custom-component`, Python 3.14).
 
-## Project status (2026-10-27, v0.1.1)
+## Project status (2026-10-27, v0.2.0)
 
 - v0.1.0 installed via HACS, both config entries (Born …0897, Tavascan …7134) created by the
   user in the HA UI (credentials only there, never in chat). Login works for both accounts
   (Auth0 chain → `/services/callbacklogin`), datasets download, `login_status = ok`.
-- Tavascan: 171 points, values identical to the fixtures (SoC 23, odometer 10044, range 90,
-  2 ambiguities climatisation). Born: only 72 points, **no battery/charging reports** (SoC,
-  range, charging state, energy `unknown`); odometer, lock, lights, temperatures, settings OK.
-  v0.1.1 logs/exposes the portal data request metadata (`data_request` attribute of the
-  `dataset` sensor) to compare both vehicles' portal configuration.
+- **Packages are partial** (scan of 30+30 live packages via service `scan_datasets`): Born
+  6…93 points, SoC in 11/30; Tavascan 143…171, 3 packages without SoC during a trip. Portal
+  data requests of both vehicles are identical (All Data, 15 min). Portal rate-limits (429)
+  after ~25 downloads in a row. v0.2.0 therefore downloads every unseen package (1 s apart,
+  stop at 429) and merges points by key into a persistent store with per-value provenance.
 - v0.1.1: `result_state` JWT redacted, foreign-slot keys never learned (`status: shared`),
   German names `Ladestand (SoC)` / `Ladestatus`, HACS topics check enabled.
 - Open (README "Known gaps"): Born missing clusters, `climatisation_state` /
