@@ -46,7 +46,7 @@ via logs/entities over MCP. Portal credentials exist only in the HA UI, never in
   project history – that stays in chat/memory.
 - Keep `docs/slot-mapping.md` up to date with every verified key finding.
 
-## Project status (2026-10-28, v0.2.1 pre-release)
+## Project status (2026-10-28, v0.2.2 pre-release)
 - Both vehicles (two portal accounts) log in (Auth0 chain → `/services/callbacklogin`), sessions
   are reused across polls and restarts (cookies in `.storage`).
 - **Packages are partial** (live scans of 30+30 packages via service `scan_datasets`): Born 6…93
@@ -57,10 +57,12 @@ via logs/entities over MCP. Portal credentials exist only in the HA UI, never in
   both entries loaded, 30 packages each backfilled without 429, Born shows SoC 51 % / 135 km /
   CHARGE_STATE_CHARGING_ERROR from the 19:47Z package. All releases are pre-releases; no stable
   has been promoted yet.
-- Verified live: range key `0ca40e18` = display (90 km at 23 %), Tavascan climate target 22 °C =
-  raw 120 (Born raw 115, its display value still needed for the unit).
+- Verified live: range key `0ca40e18` = display (90 km at 23 %); climate target temperature =
+  10 °C + raw/10 (120 → 22.0 °C Tavascan, 115 → 21.5 °C Born), shipped in v0.2.2. SoC and HV
+  level always arrive in the same package (see docs/slot-mapping.md).
 - Open: `climatisation_state`/`remaining_climate_time` key attribution (Born delivers only the
-  `f95799d0`/`3c19831c` pair → likely actual state), climate target temperature unit, whether a
-  charging session changes the Born's reports.
-- SPEC step 5 (switching the user's other consumers) is prepared outside the repository only and
-  must not run before both vehicles are healthy here.
+  `f95799d0`/`3c19831c` pair → likely actual state).
+- 2026-10-28: the previous Data Act integration was removed from the user's HA (config entries
+  and HACS repository); entity ids lost their `_2` suffix; the energy dashboard and the monthly
+  utility meters point at this integration's entities. The user's charging manager still has to
+  be switched to these entities by the user in its own UI (needs its admin password).
