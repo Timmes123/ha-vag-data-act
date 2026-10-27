@@ -1,9 +1,14 @@
 name: Release
 
+# Creates the GitHub release that HACS consumes. Two triggers:
+# - push of a tag v*  (the tag already exists)
+# - workflow_dispatch with the version from manifest.json (creates tag + release)
+
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,16 +19,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Check manifest version matches tag
+      - name: Determine version
+        id: version
         run: |
           python3 - <<'PY'
           import json, os, sys
-          tag = os.environ["GITHUB_REF_NAME"].lstrip("v")
           version = json.load(open("custom_components/vag_data_act/manifest.json"))["version"]
-          print(f"tag={tag} manifest={version}")
-          sys.exit(0 if tag == version else 1)
+          ref = os.environ.get("GITHUB_REF_NAME", "")
+          if os.environ["GITHUB_REF_TYPE"] == "tag" and ref.lstrip("v") != version:
+              print(f"tag {ref} does not match manifest version {version}")
+              sys.exit(1)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write(f"tag=v{version}\n")
+          print(f"release tag v{version}")
           PY
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           generate_release_notes: true
           body_path: ${{ github.workspace }}/RELEASE_NOTES.md
