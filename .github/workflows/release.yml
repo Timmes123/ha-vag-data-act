@@ -1,0 +1,29 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create GitHub release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check manifest version matches tag
+        run: |
+          python3 - <<'PY'
+          import json, os, sys
+          tag = os.environ["GITHUB_REF_NAME"].lstrip("v")
+          version = json.load(open("custom_components/vag_data_act/manifest.json"))["version"]
+          print(f"tag={tag} manifest={version}")
+          sys.exit(0 if tag == version else 1)
+          PY
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body_path: ${{ github.workspace }}/RELEASE_NOTES.md

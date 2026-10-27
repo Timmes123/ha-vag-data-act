@@ -1,0 +1,248 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "EU-Data-Act-Portal-Konto",
+        "description": "Zugangsdaten des VW-Konzern-EU-Data-Act-Portals. Portal vorher vorbereiten: Fahrzeug verknüpfen, Consent bestätigen und eine kontinuierliche Datenanfrage (All Data, 15 min) anlegen.",
+        "data": {
+          "email": "E-Mail",
+          "password": "Passwort",
+          "brand": "Marke",
+          "country": "Ländercode (z. B. de)",
+          "language": "Sprachcode (z. B. de)"
+        }
+      },
+      "vehicle": {
+        "title": "Fahrzeug wählen",
+        "data": {
+          "vin": "Fahrzeug"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Erneut anmelden",
+        "description": "Passwort für {email} eingeben.",
+        "data": {
+          "password": "Passwort"
+        }
+      },
+      "reconfigure": {
+        "title": "Konto neu konfigurieren",
+        "data": {
+          "email": "E-Mail",
+          "password": "Passwort",
+          "brand": "Marke",
+          "country": "Ländercode",
+          "language": "Sprachcode"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "E-Mail oder Passwort falsch",
+      "consent_required": "Das Portal verlangt eine Bestätigung im Browser (Bedingungen/Consent). Portal öffnen, bestätigen, dann erneut versuchen.",
+      "cannot_connect": "Portal nicht erreichbar (Störung oder Rate-Limit), später erneut versuchen",
+      "no_vehicles": "Kein Fahrzeug mit diesem Konto verknüpft",
+      "wrong_account": "Dieses Konto enthält das konfigurierte Fahrzeug nicht",
+      "unknown": "Unerwarteter Fehler, siehe Log"
+    },
+    "abort": {
+      "already_configured": "Dieses Fahrzeug ist bereits eingerichtet",
+      "reauth_successful": "Erneute Anmeldung erfolgreich",
+      "reconfigure_successful": "Neukonfiguration erfolgreich"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Optionen",
+        "data": {
+          "scan_interval": "Abfrageintervall (Minuten)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "soc": {
+        "name": "Ladezustand"
+      },
+      "range": {
+        "name": "Reichweite"
+      },
+      "odometer": {
+        "name": "Kilometerstand"
+      },
+      "target_soc_effective": {
+        "name": "Ladeziel (wirksam)"
+      },
+      "target_soc_user": {
+        "name": "Ladeziel (Nutzer)"
+      },
+      "bcam_threshold": {
+        "name": "Pflegemodus-Schwelle"
+      },
+      "charging_state": {
+        "name": "Ladezustand (Status)"
+      },
+      "charging_error_code": {
+        "name": "Ladefehlercode"
+      },
+      "charging_error_text": {
+        "name": "Ladefehlertext"
+      },
+      "charge_power": {
+        "name": "Ladeleistung"
+      },
+      "charge_rate": {
+        "name": "Laderate"
+      },
+      "remaining_charging_time": {
+        "name": "Restladezeit"
+      },
+      "charge_energy": {
+        "name": "Geladene Energie"
+      },
+      "energy_content_current": {
+        "name": "Akku-Energie"
+      },
+      "energy_content_max": {
+        "name": "Akku-Energie (max)"
+      },
+      "charge_mode": {
+        "name": "Lademodus"
+      },
+      "charge_type": {
+        "name": "Ladeart"
+      },
+      "max_charge_current_ac": {
+        "name": "Max. AC-Ladestrom"
+      },
+      "outdoor_temperature": {
+        "name": "Außentemperatur"
+      },
+      "battery_temperature_min": {
+        "name": "Batterietemperatur (min)"
+      },
+      "battery_temperature_max": {
+        "name": "Batterietemperatur (max)"
+      },
+      "climatisation_state": {
+        "name": "Klimazustand"
+      },
+      "remaining_climate_time": {
+        "name": "Restklimazeit"
+      },
+      "window_heating_state": {
+        "name": "Scheibenheizung"
+      },
+      "vehicle_time": {
+        "name": "Fahrzeugzeit"
+      },
+      "battery_level_hv": {
+        "name": "HV-Batteriestand"
+      },
+      "charging_scenario": {
+        "name": "Ladeszenario"
+      },
+      "charge_mode_selection": {
+        "name": "Lademodus-Auswahl"
+      },
+      "auto_unlock_ac": {
+        "name": "Auto-Entriegelung AC"
+      },
+      "climatisation_target_temperature": {
+        "name": "Klima-Zieltemperatur (roh)"
+      },
+      "profile_vehicle_time": {
+        "name": "Fahrzeugzeit (Profil-Report)"
+      },
+      "timer_estimated_start": {
+        "name": "Ladetimer Start"
+      },
+      "timer_estimated_finish": {
+        "name": "Ladetimer Ende"
+      },
+      "login_status": {
+        "name": "Login-Status",
+        "state": {
+          "ok": "OK",
+          "auth_failed": "Anmeldung fehlgeschlagen",
+          "consent_required": "Zustimmung erforderlich",
+          "portal_error": "Portal-Fehler",
+          "unknown": "Unbekannt"
+        }
+      },
+      "last_successful_download": {
+        "name": "Letzter erfolgreicher Download"
+      },
+      "last_vehicle_report": {
+        "name": "Letzte Fahrzeugmeldung"
+      },
+      "data_age_minutes": {
+        "name": "Datenalter"
+      },
+      "ambiguous_fields": {
+        "name": "Mehrdeutige Felder"
+      },
+      "unmapped_points": {
+        "name": "Nicht zugeordnete Datenpunkte"
+      },
+      "dataset": {
+        "name": "Datensatz"
+      }
+    },
+    "binary_sensor": {
+      "locked": {
+        "name": "Verriegelt"
+      },
+      "open": {
+        "name": "Offen"
+      },
+      "parking_light_left": {
+        "name": "Standlicht links"
+      },
+      "parking_light_right": {
+        "name": "Standlicht rechts"
+      },
+      "battery_care_mode_active": {
+        "name": "Pflegemodus aktiv"
+      },
+      "dataset_changed": {
+        "name": "Datensatz geändert"
+      }
+    }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "Portal-Anmeldung für {title} fehlgeschlagen",
+      "description": "Das EU-Data-Act-Portal hat die Zugangsdaten abgelehnt: {error}. Integration erneut anmelden."
+    },
+    "consent_required": {
+      "title": "Portal-Bestätigung für {title} erforderlich",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Portal-Bestätigung erledigt",
+            "description": "EU-Data-Act-Portal im Browser öffnen, anmelden, Bedingungen/Consent bestätigen und Fahrzeug verknüpfen. Danach hier bestätigen. Details: {error}"
+          }
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_entry": {
+      "message": "Unbekannter Config-Eintrag"
+    }
+  },
+  "services": {
+    "refresh_now": {
+      "name": "Jetzt aktualisieren",
+      "description": "Fragt das Portal sofort ab.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Config-Eintrag",
+          "description": "Auf ein Fahrzeug begrenzen (Standard: alle)."
+        }
+      }
+    }
+  }
+}

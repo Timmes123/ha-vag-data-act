@@ -21,6 +21,8 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+          # Topics only matter for the HACS default store, not for custom repositories.
+          ignore: topics
 
   pytest:
     name: Parser tests

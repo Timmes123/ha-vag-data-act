@@ -1,0 +1,248 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "EU Data Act portal account",
+        "description": "Credentials of the VW group EU Data Act portal. Prepare the portal first: link the vehicle, accept consent and set up a continuous data request (All Data, 15 min).",
+        "data": {
+          "email": "E-mail",
+          "password": "Password",
+          "brand": "Brand",
+          "country": "Country code (e.g. de)",
+          "language": "Language code (e.g. de)"
+        }
+      },
+      "vehicle": {
+        "title": "Select vehicle",
+        "data": {
+          "vin": "Vehicle"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate",
+        "description": "Enter the password for {email}.",
+        "data": {
+          "password": "Password"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure account",
+        "data": {
+          "email": "E-mail",
+          "password": "Password",
+          "brand": "Brand",
+          "country": "Country code",
+          "language": "Language code"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid e-mail or password",
+      "consent_required": "The portal requires confirmation in the browser (terms/consent). Open the portal, confirm, then retry.",
+      "cannot_connect": "Portal not reachable (outage or rate limit), try again later",
+      "no_vehicles": "No vehicle linked to this account",
+      "wrong_account": "This account does not contain the configured vehicle",
+      "unknown": "Unexpected error, see log"
+    },
+    "abort": {
+      "already_configured": "This vehicle is already configured",
+      "reauth_successful": "Re-authentication successful",
+      "reconfigure_successful": "Reconfiguration successful"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "scan_interval": "Poll interval (minutes)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "soc": {
+        "name": "State of charge"
+      },
+      "range": {
+        "name": "Range"
+      },
+      "odometer": {
+        "name": "Odometer"
+      },
+      "target_soc_effective": {
+        "name": "Charge target (effective)"
+      },
+      "target_soc_user": {
+        "name": "Charge target (user)"
+      },
+      "bcam_threshold": {
+        "name": "Battery care threshold"
+      },
+      "charging_state": {
+        "name": "Charging state"
+      },
+      "charging_error_code": {
+        "name": "Charging error code"
+      },
+      "charging_error_text": {
+        "name": "Charging error text"
+      },
+      "charge_power": {
+        "name": "Charging power"
+      },
+      "charge_rate": {
+        "name": "Charging rate"
+      },
+      "remaining_charging_time": {
+        "name": "Remaining charging time"
+      },
+      "charge_energy": {
+        "name": "Charged energy"
+      },
+      "energy_content_current": {
+        "name": "Battery energy"
+      },
+      "energy_content_max": {
+        "name": "Battery energy (max)"
+      },
+      "charge_mode": {
+        "name": "Charge mode"
+      },
+      "charge_type": {
+        "name": "Charge type"
+      },
+      "max_charge_current_ac": {
+        "name": "Max. AC charging current"
+      },
+      "outdoor_temperature": {
+        "name": "Outdoor temperature"
+      },
+      "battery_temperature_min": {
+        "name": "Battery temperature (min)"
+      },
+      "battery_temperature_max": {
+        "name": "Battery temperature (max)"
+      },
+      "climatisation_state": {
+        "name": "Climatisation state"
+      },
+      "remaining_climate_time": {
+        "name": "Remaining climatisation time"
+      },
+      "window_heating_state": {
+        "name": "Window heating"
+      },
+      "vehicle_time": {
+        "name": "Vehicle time"
+      },
+      "battery_level_hv": {
+        "name": "HV battery level"
+      },
+      "charging_scenario": {
+        "name": "Charging scenario"
+      },
+      "charge_mode_selection": {
+        "name": "Charge mode selection"
+      },
+      "auto_unlock_ac": {
+        "name": "Auto unlock AC"
+      },
+      "climatisation_target_temperature": {
+        "name": "Climatisation target temperature (raw)"
+      },
+      "profile_vehicle_time": {
+        "name": "Vehicle time (profile report)"
+      },
+      "timer_estimated_start": {
+        "name": "Charging timer start"
+      },
+      "timer_estimated_finish": {
+        "name": "Charging timer finish"
+      },
+      "login_status": {
+        "name": "Login status",
+        "state": {
+          "ok": "OK",
+          "auth_failed": "Authentication failed",
+          "consent_required": "Consent required",
+          "portal_error": "Portal error",
+          "unknown": "Unknown"
+        }
+      },
+      "last_successful_download": {
+        "name": "Last successful download"
+      },
+      "last_vehicle_report": {
+        "name": "Last vehicle report"
+      },
+      "data_age_minutes": {
+        "name": "Data age"
+      },
+      "ambiguous_fields": {
+        "name": "Ambiguous fields"
+      },
+      "unmapped_points": {
+        "name": "Unmapped data points"
+      },
+      "dataset": {
+        "name": "Dataset"
+      }
+    },
+    "binary_sensor": {
+      "locked": {
+        "name": "Locked"
+      },
+      "open": {
+        "name": "Open"
+      },
+      "parking_light_left": {
+        "name": "Parking light left"
+      },
+      "parking_light_right": {
+        "name": "Parking light right"
+      },
+      "battery_care_mode_active": {
+        "name": "Battery care mode active"
+      },
+      "dataset_changed": {
+        "name": "Dataset changed"
+      }
+    }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "Portal login failed for {title}",
+      "description": "The EU Data Act portal rejected the credentials: {error}. Re-authenticate the integration."
+    },
+    "consent_required": {
+      "title": "Portal confirmation required for {title}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Confirm portal consent",
+            "description": "Open the EU Data Act portal in a browser, log in, accept the terms/consent and link the vehicle. Then confirm here. Details: {error}"
+          }
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_entry": {
+      "message": "Unknown config entry"
+    }
+  },
+  "services": {
+    "refresh_now": {
+      "name": "Refresh now",
+      "description": "Polls the portal immediately.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Config entry",
+          "description": "Limit to one vehicle (default: all)."
+        }
+      }
+    }
+  }
+}
