@@ -136,7 +136,7 @@ SLOTS: tuple[Slot, ...] = (
         key="0ca40e18-0564-3eda-bcc0-7aee9ef44f04",
         note="Bare field name 'value' without context; mapped by key only. evcc "
         "(vehicle/vw/eudataact/types.go, KeyRangeID3) documents this key as the MEB "
-        "range. Plausible on the fixture (90 km at 23 %). Verify against the car.",
+        "range. Confirmed live 2026-10-27: Tavascan display 90 km at 23 % = this key.",
     ),
     # Odometer
     Slot(

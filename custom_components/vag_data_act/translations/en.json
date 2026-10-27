@@ -243,6 +243,16 @@
           "description": "Limit to one vehicle (default: all)."
         }
       }
+    },
+    "scan_datasets": {
+      "name": "Scan datasets",
+      "description": "Diagnostic: downloads every listed dataset and logs per file the inner name, hash, point count and whether the SoC/charging reports are included.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Config entry",
+          "description": "Limit to one vehicle (default: all)."
+        }
+      }
     }
   }
 }

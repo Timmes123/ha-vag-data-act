@@ -37,7 +37,7 @@ from .const import (
     LOGIN_STATUS_UNKNOWN,
     MAX_OUTAGE_BACKOFF_MINUTES,
 )
-from .parser import ParsedDataset, parse_dataset
+from .parser import ParsedDataset, load_points, parse_dataset, summarize_points
 from .slots import foreign_key_overrides
 
 _LOGGER = logging.getLogger(__name__)
@@ -63,6 +63,7 @@ class VehicleData:
     identifier: str | None = None
     key_overrides: dict[str, str] = field(default_factory=dict)
     request_metadata: dict[str, Any] = field(default_factory=dict)
+    last_scan: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def last_vehicle_report(self) -> datetime | None:
@@ -254,6 +255,81 @@ class VagDataActCoordinator(DataUpdateCoordinator[VehicleData]):
                 )
             else:
                 ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+
+    async def async_scan_datasets(self) -> list[dict[str, Any]]:
+        """Diagnostic: download *every* listed dataset (newest first) and summarize it.
+
+        Used to check whether older ZIPs of a vehicle carry data points that the newest one
+        lacks (the Born delivers no battery/charging reports in its newest dataset). Runs
+        over the normal session; results are logged, kept in ``data.last_scan`` and shown
+        in the diagnostics download. Entities are not touched.
+        """
+        data = self.data
+        results: list[dict[str, Any]] = []
+        try:
+            if data.identifier is None:
+                data.identifier = await self.client.async_get_identifier(self.vin)
+            datasets = await self.client.async_list_datasets(self.vin, data.identifier)
+            ordered = sorted(
+                (d for d in datasets if d.created_on is not None),
+                key=lambda d: d.created_on,  # type: ignore[arg-type, return-value]
+                reverse=True,
+            )
+            _LOGGER.info("scan …%s: %d datasets listed", self.vin[-4:], len(datasets))
+            seen_fields: set[str] = set()
+            for info in ordered:
+                entry: dict[str, Any] = {
+                    "zip": info.name,
+                    "created_on": info.created_on.isoformat() if info.created_on else None,
+                    "size": info.size,
+                }
+                if not info.has_content:
+                    entry["summary"] = "no content"
+                    results.append(entry)
+                    continue
+                try:
+                    ds = await self.client.async_download_dataset(
+                        self.vin, data.identifier, info.name
+                    )
+                    _, points = load_points(ds.content)
+                except (PortalError, ValueError) as err:
+                    entry["error"] = str(err)
+                    results.append(entry)
+                    _LOGGER.warning("scan …%s: %s failed: %s", self.vin[-4:], info.name, err)
+                    continue
+                summary = summarize_points(points)
+                new_fields = sorted({p.field for p in points} - seen_fields)
+                seen_fields.update(p.field for p in points)
+                entry.update(inner=ds.inner_name, sha256=ds.sha256[:16], **summary)
+                entry["new_fields"] = new_fields
+                results.append(entry)
+                _LOGGER.info(
+                    "scan …%s: %s -> %s sha256=%s points=%d fields=%d soc=%s charging_state=%s "
+                    "reports=%s new_fields=%s",
+                    self.vin[-4:],
+                    info.name,
+                    ds.inner_name,
+                    ds.sha256[:16],
+                    summary["points"],
+                    summary["fields"],
+                    summary["has_soc"],
+                    summary["has_charging_state"],
+                    summary["message_ids"],
+                    new_fields,
+                )
+            _LOGGER.info(
+                "scan …%s finished: %d datasets, %d distinct fields overall, soc in any: %s",
+                self.vin[-4:],
+                len(results),
+                len(seen_fields),
+                any(r.get("has_soc") for r in results),
+            )
+        except (PortalError, ValueError) as err:
+            _LOGGER.error("scan …%s aborted: %s", self.vin[-4:], err)
+            results.append({"error": str(err)})
+        data.last_scan = results
+        self.async_update_listeners()
+        return results
 
     async def async_set_base_interval(self, minutes: int) -> None:
         self._base_interval = timedelta(minutes=minutes)

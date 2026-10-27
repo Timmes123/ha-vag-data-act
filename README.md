@@ -55,7 +55,7 @@ slots additionally list all `candidates` (key → raw value).
 | Entity | Source field | Unit / class | Notes |
 |---|---|---|---|
 | State of charge | `battery_state_report.soc` | %, battery | Only SoC source; checked against `battery_level_HV.value` and energy content quotient (3 % tolerance), otherwise empty + ambiguity `soc` |
-| Range | `value` (key `0ca40e18-…`) | km, distance | Bare field, mapped by key only (see known gaps) |
+| Range | `value` (key `0ca40e18-…`) | km, distance | Bare field, mapped by key only; confirmed against the vehicle display |
 | Odometer | `mileage.value` | km, distance, total_increasing | Max of all copies |
 | Charge target (effective) | `settings.target_soc` key `b3b04f31-…` | % | min(user, battery care threshold) |
 | Charge target (user) | `settings.target_soc` key `e21d4d25-…` | % | |
@@ -100,6 +100,9 @@ start/finish, and the health sensors below.
 
 Values are never hidden behind *unavailable*: stale values stay visible, the age tells.
 Service `vag_data_act.refresh_now` polls immediately (optionally one config entry).
+Service `vag_data_act.scan_datasets` is a diagnostic: it downloads every listed dataset
+and logs per file the inner name, hash, point count, report ids and whether the SoC /
+charging reports are included; the result is part of the diagnostics download.
 Diagnostics download redacts e-mail, password, VIN, identifier and cookies.
 Logging: set the integration to DEBUG to see every login hop (code/state redacted) and every
 download with inner file name and hash.
@@ -115,9 +118,6 @@ files. Use `-v` for the full redirect chain.
 * `climatisation_state` / `remaining_climate_time`: two keys with contradicting values
   (actual state vs. last climatisation job?). Not verified → entity empty, both keys in
   `candidates`. Once the attribution is confirmed on the live car the key will be fixed.
-* `range`: comes from a bare `value` point (key `0ca40e18-…`). evcc documents the same key as
-  the MEB range and the fixture value (90 km at 23 %) is plausible, but it is not confirmed
-  against the vehicle display yet.
 * `climatisation_settings.target_temperature` = 120: unit unknown, exposed raw.
 * Keys were verified on a Cupra Tavascan. For other vehicles unknown keys fall back to
   unique field names and are learned per VIN (`.storage/vag_data_act.<VIN>`). A key that

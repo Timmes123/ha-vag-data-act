@@ -267,3 +267,14 @@ def test_foreign_key_overrides_helper():
     assert foreign_key_overrides(overrides) == {
         "target_soc_user": "b3b04f31-b10e-38aa-b8ad-c0da7c06caea"
     }
+
+
+def test_summarize_points_fixture():
+    from custom_components.vag_data_act.parser import load_points, summarize_points
+
+    _, points = load_points(F180109.read_bytes())
+    s = summarize_points(points)
+    assert s["points"] == 171 and s["has_soc"] and s["has_charging_state"]
+    assert "RpcStateReport_4" in s["message_ids"]
+    assert s["field_groups"]["battery_state_report"] == 6
+    assert s["field_groups"]["<bare>"] > 10
