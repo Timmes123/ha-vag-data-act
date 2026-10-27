@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+Thumbs.db
+*.zip
+.storage/
+CLOUD_PROMPT.md
