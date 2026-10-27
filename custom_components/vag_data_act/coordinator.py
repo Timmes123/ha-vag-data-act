@@ -61,6 +61,18 @@ from .slots import foreign_key_overrides
 _LOGGER = logging.getLogger(__name__)
 
 STORE_VERSION = 2
+
+
+class VehicleStore(Store[dict[str, Any]]):
+    """Per-VIN store. Version 1 (<= 0.1.2) kept only the newest package as ``last_content``;
+    ``async_load_state`` seeds the point store from it, so the data passes through unchanged."""
+
+    async def _async_migrate_func(
+        self, old_major_version: int, old_minor_version: int, old_data: dict[str, Any]
+    ) -> dict[str, Any]:
+        return old_data
+
+
 # The portal answers HTTP 429 after ~25 downloads in a row (live scan 2026-10-27).
 DOWNLOAD_DELAY_S = 1.0
 # Package names remembered as processed (the portal lists 30).
@@ -113,7 +125,7 @@ class VagDataActCoordinator(DataUpdateCoordinator[VehicleData]):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, client: PortalClient) -> None:
         self.client = client
         self.vin: str = entry.data[CONF_VIN]
-        self._store = Store[dict[str, Any]](hass, STORE_VERSION, f"{DOMAIN}.{self.vin}")
+        self._store = VehicleStore(hass, STORE_VERSION, f"{DOMAIN}.{self.vin}")
         self._outage_count = 0
         self._base_interval = timedelta(
             minutes=entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL_MINUTES)

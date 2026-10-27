@@ -81,3 +81,63 @@ async def test_setup_entry(hass):
         hass.states.get("sensor.tavascan_last_vehicle_report").state == "2026-10-27T17:46:51+00:00"
     )
     assert await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_setup_migrates_v1_store(hass, hass_storage):
+    """A v0.1 store (version 1, newest package only) must load and seed the point store."""
+    content = FIXTURE.read_text(encoding="utf-8")
+    hass_storage["vag_data_act.VSSZZZKRXSA000001"] = {
+        "version": 1,
+        "minor_version": 1,
+        "key": "vag_data_act.VSSZZZKRXSA000001",
+        "data": {
+            "key_overrides": {},
+            "identifier": "ID-1",
+            "request_metadata": {"Frequency": "15mins"},
+            "dataset_hash": "a" * 64,
+            "inner_name": "VSSZZZKRXSA000001_20261027200113.json",
+            "dataset_name": "20261027200113_VSSZZZKRXSA000001.zip",
+            "last_successful_download": "2026-10-27T20:05:00+00:00",
+            "last_content": content,
+        },
+    }
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Tavascan",
+        unique_id="VSSZZZKRXSA000001",
+        data={
+            "email": "me@example.com",
+            "password": "pw",
+            "brand": "CUPRA",
+            "country": "de",
+            "language": "de",
+            "vin": "VSSZZZKRXSA000001",
+            "nickname": "Tavascan",
+        },
+        options={"scan_interval": 15},
+    )
+    entry.add_to_hass(hass)
+    with (
+        patch("custom_components.vag_data_act.api.PortalClient.async_login"),
+        patch(
+            "custom_components.vag_data_act.api.PortalClient.async_list_datasets",
+            return_value=[
+                DatasetInfo(
+                    "20261027200113_VSSZZZKRXSA000001.zip",
+                    datetime(2026, 10, 27, 20, 1, 13, tzinfo=UTC),
+                    1,
+                )
+            ],
+        ),
+        patch("custom_components.vag_data_act.api.PortalClient.async_download_dataset") as download,
+    ):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        download.assert_not_called()  # the only listed package was already processed
+
+    assert hass.states.get("sensor.tavascan_state_of_charge").state == "23"
+    soc = hass.states.get("sensor.tavascan_state_of_charge")
+    assert soc.attributes["source_dataset"] == "VSSZZZKRXSA000001_20261027200113.json"
+    assert hass.states.get("sensor.tavascan_login_status").state == "ok"
+    stored = hass_storage["vag_data_act.VSSZZZKRXSA000001"]
+    assert stored["version"] == 2 and len(stored["data"]["points"]) == 171
