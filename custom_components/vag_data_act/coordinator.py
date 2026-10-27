@@ -161,6 +161,7 @@ class VagDataActCoordinator(DataUpdateCoordinator[VehicleData]):
             )
         data.processed = [str(n) for n in stored.get("processed", [])]
         data.points = points_from_json(stored.get("points", []))
+        migrated = False
         if not data.points and (content := stored.get("last_content")):
             # Store version 1 (<= 0.1.2) kept only the newest package: seed the store with it.
             try:
@@ -171,6 +172,7 @@ class VagDataActCoordinator(DataUpdateCoordinator[VehicleData]):
                 merge_points(data.points, stamp_points(points, data.inner_name))
                 if data.dataset_name:
                     data.processed = [data.dataset_name]
+                migrated = True
                 _LOGGER.info(
                     "migrated store of …%s: %d points from %s",
                     self.vin[-4:],
@@ -179,6 +181,8 @@ class VagDataActCoordinator(DataUpdateCoordinator[VehicleData]):
                 )
         if data.points:
             self._reparse()
+        if migrated:
+            await self._async_save_state()  # write the version-2 layout right away
 
     async def _async_save_state(self) -> None:
         data = self.data
