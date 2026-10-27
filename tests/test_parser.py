@@ -181,7 +181,9 @@ def test_every_fixture_normalizes(path: Path):
 def test_three_contents_differ_only_in_vehicle_time():
     a, b, c = (parse_dataset(f.read_bytes()).normalized() for f in (F180109, F194730, F200113))
     assert b == c, "…200113 is …194730 re-sorted"
-    diff = {k: (a["values"][k], b["values"][k]) for k in a["values"] if a["values"][k] != b["values"][k]}
+    diff = {
+        k: (a["values"][k], b["values"][k]) for k in a["values"] if a["values"][k] != b["values"][k]
+    }
     assert diff == {
         "vehicle_time": (
             parse_timestamp("2026-10-27T17:50:59.000+01:00"),

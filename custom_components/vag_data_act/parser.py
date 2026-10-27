@@ -134,10 +134,10 @@ def parse_timestamp(raw: str) -> datetime | None:
     if text.isdigit():
         try:
             return datetime.fromtimestamp(int(text) / 1000, tz=UTC)
-        except (OverflowError, OSError, ValueError):
+        except OverflowError, OSError, ValueError:
             return None
     try:
-        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        dt = datetime.fromisoformat(text)
     except ValueError:
         return None
     if dt.tzinfo is None:
@@ -148,8 +148,7 @@ def parse_timestamp(raw: str) -> datetime | None:
 def parse_duration(raw: str) -> int | None:
     """Parse "6600s" (or a bare number) into seconds."""
     text = raw.strip().lower()
-    if text.endswith("s"):
-        text = text[:-1]
+    text = text.removesuffix("s")
     try:
         return int(float(text))
     except ValueError:
@@ -384,7 +383,9 @@ def parse_points(
 
     for slot in SLOTS:
         if slot.policy is Policy.KEYED:
-            sv = _resolve_keyed(slot, by_key, by_field, overrides.get(slot.name), learned, ambiguities)
+            sv = _resolve_keyed(
+                slot, by_key, by_field, overrides.get(slot.name), learned, ambiguities
+            )
         else:
             sv = _resolve_multi(slot, by_field, ambiguities, warnings)
         values[slot.name] = sv

@@ -359,8 +359,7 @@ SLOTS: tuple[Slot, ...] = (
         Kind.DURATION,
         "s",
         policy=Policy.AGREE,
-        note="Two slots (0f3fab0c-… 1800s, 3c19831c-… 0s), same situation as "
-        "climatisation_state.",
+        note="Two slots (0f3fab0c-… 1800s, 3c19831c-… 0s), same situation as climatisation_state.",
     ),
     Slot(
         "window_heating_state",
