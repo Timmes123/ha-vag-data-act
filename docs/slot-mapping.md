@@ -59,3 +59,16 @@ Tavascan: `mileage.value` (both keys), `locked`, `open`, `parking_light_*`,
 are the `f95799d0-…`/`3c19831c-…` pair, which supports the reading that this pair is the
 *actual state* (`RpcStateReport`) and `1472bf20-…`/`0f3fab0c-…` belong to
 `RpcStateReportForStartClimaJob` (last climatisation job) – still to be confirmed live.
+
+## Package observations (live scans, 2026-10-27)
+
+Service `scan_datasets` over 30 consecutive packages per vehicle:
+
+| Vehicle | Points per package | Packages with `battery_state_report.soc` | Report sets |
+|---|---|---|---|
+| Born | 6, 16, 67, 72 (×9), 74, 88, 91–93 (×10) | 11 of 30 | `RPT_0/1 + RpcStateReport_0` (no battery) vs. `RPT_2/3 + RpcStateReport_4` (with battery) |
+| Tavascan | 143–148 (×3, during a trip), 162, 171 (×22) | 23 of 26 downloaded | nine reports in the full packages |
+
+Both vehicles have an identical portal data request (*All Data* + Charging + …, 15 min).
+Consequences implemented in v0.2.0: every unseen package is merged by key, values carry the
+capture time of their own package, downloads are throttled (HTTP 429 after ~25 in a row).
