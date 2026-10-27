@@ -129,9 +129,15 @@ files. Use `-v` for the full redirect chain.
   `charging_state_report.current_charge_state`, `energy_contents.*`, `value`/range,
   `outdoor_temperature`, `battery_care_mode.*`), so SoC, range, charging state and energy
   are `unknown`, while odometer, lock state, lights, temperatures, climatisation and the
-  charge settings are delivered. Whether the portal data request for that vehicle is
-  really *All Data* (compare the `data_request` attribute of the `dataset` sensor between
-  the vehicles) or the vehicle simply does not report these clusters is being verified.
+  charge settings are delivered. The portal data requests of both vehicles are identical
+  (`data_request` attribute: *All Data* + Charging + …, 15 min, since June 2026), so the gap
+  is on the vehicle side: this Born does not report the battery/charging clusters through
+  the Data Act portal. Open: whether a charging session or a software update changes that.
+* `climatisation_state` / `remaining_climate_time` keys: the Born delivers only the
+  `f95799d0-…` / `3c19831c-…` pair (from `RpcStateReport`), which suggests that pair is the
+  actual state and `1472bf20-…` / `0f3fab0c-…` belong to the last climatisation job
+  (`RpcStateReportForStartClimaJob`). Still to be confirmed by starting a climatisation
+  from the app and watching both keys.
 * Entity names: `state_of_charge` is the SoC in percent, `charging_state` the enum
   (`CHARGE_STATE_…`).
 
