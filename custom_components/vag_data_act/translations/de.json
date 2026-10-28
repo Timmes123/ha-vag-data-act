@@ -188,6 +188,12 @@
       },
       "dataset": {
         "name": "Datensatz"
+      },
+      "charge_bulk_threshold": {
+        "name": "Bulk-Ladegrenze"
+      },
+      "remaining_charging_time_bulk": {
+        "name": "Restladezeit bis Bulk-Grenze"
       }
     },
     "binary_sensor": {

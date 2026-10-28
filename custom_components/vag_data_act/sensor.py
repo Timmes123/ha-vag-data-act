@@ -119,6 +119,21 @@ SLOT_SENSORS: tuple[SlotSensorDescription, ...] = (
         transform=_remaining_charging,
     ),
     SlotSensorDescription(
+        key="remaining_charging_time_bulk",
+        slot="remaining_charging_time_bulk",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        transform=_remaining_charging,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    SlotSensorDescription(
+        key="charge_bulk_threshold",
+        slot="charge_bulk_threshold",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="%",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    SlotSensorDescription(
         key="charge_energy",
         slot="charge_energy",
         device_class=SensorDeviceClass.ENERGY_STORAGE,

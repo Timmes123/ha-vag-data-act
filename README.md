@@ -112,6 +112,7 @@ additionally list all `candidates` (key → raw value).
 | Charging rate | `battery_state_report.charge_rate` | km/h, speed | |
 | Remaining charging time | `battery_state_report.remaining_charging_time_complete` | s, duration | only while `CHARGE_STATE_CHARGING` / `…CONSERVATION_CHARGING` |
 | Charged energy | `battery_state_report.charge_energy` | kWh | |
+| Bulk threshold / remaining time to it | `battery_state_report.charge_bulk_threshold`, `.remaining_charging_time_bulk` | %, s | diagnostic; delivered by the Born |
 | Battery energy / (max) | `energy_contents.*.physical_value` | kWh | delivered in 0.1 kWh, scaled |
 | Charge mode / type / max. AC current | `charging_state_report.charge_mode`, `.charge_type`, `settings.max_charge_current_ac` | enum string | |
 | Locked | `locked` | binary, lock | |

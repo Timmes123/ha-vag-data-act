@@ -84,7 +84,12 @@ def test_keys_stable_and_order_random():
     a, b, c = (_raw(f)["Data"] for f in (F180109, F194730, F200113))
     assert sum(x["key"] == y["key"] for x, y in zip(a, b, strict=True)) == 5
     assert sum(x["key"] == y["key"] for x, y in zip(b, c, strict=True)) == 5
-    assert all_known_keys() <= key_sets.pop()
+    # keys verified only on the live Born (not part of the Tavascan fixtures)
+    live_only = {
+        "b9e3fd5e-4346-3e94-8c67-d4a0f5d61d5a",
+        "2725401e-75cf-3c11-96a1-e926c9871fd3",
+    }
+    assert all_known_keys() - live_only <= key_sets.pop()
 
 
 def test_duplicate_slots_and_soc_sources():
@@ -334,3 +339,28 @@ def test_climatisation_target_temperature_is_degrees():
     parsed = parse_dataset(F180109.read_bytes())
     sv = parsed.values["climatisation_target_temperature"]
     assert sv.raw == "120" and sv.value == 22.0 and sv.unit == "°C"
+
+
+def test_soc_not_flagged_by_reference_from_other_package():
+    """Live Born case: SoC 51 % from one package, HV level 90 % from a later one."""
+    from datetime import timedelta
+
+    from custom_components.vag_data_act.parser import (
+        load_points,
+        merge_points,
+        package_capture_time,
+        parse_points,
+        stamp_points,
+    )
+
+    _, full = load_points(F180109.read_bytes())
+    t0 = package_capture_time(full)
+    store: dict = {}
+    merge_points(store, stamp_points(full, "a.json", t0))
+    hv_key = "ac1108b1-b8cc-3db9-a663-03d387e42223"
+    later = [type(p)(p.key, p.field, "90.0") for p in full if p.key == hv_key]
+    merge_points(store, stamp_points(later, "b.json", t0 + timedelta(hours=3)))
+    parsed = parse_points("VIN", list(store.values()))
+    assert parsed.get("soc") == 23
+    assert parsed.values["soc"].status == "ok"
+    assert "soc" not in [a.name for a in parsed.ambiguities]

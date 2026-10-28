@@ -188,6 +188,12 @@
       },
       "dataset": {
         "name": "Dataset"
+      },
+      "charge_bulk_threshold": {
+        "name": "Charge bulk threshold"
+      },
+      "remaining_charging_time_bulk": {
+        "name": "Remaining charging time to bulk threshold"
       }
     },
     "binary_sensor": {

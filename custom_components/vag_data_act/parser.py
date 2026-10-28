@@ -359,13 +359,24 @@ def _finish(
 def _cross_checks(values: dict[str, SlotValue], ambiguities: list[Ambiguity]) -> None:
     """Plausibility rules from SPEC.md that span several slots."""
     soc = values["soc"]
+
+    def same_package(*others: SlotValue) -> bool:
+        # Packages are partial: a reference value from another package describes another
+        # moment and must not overrule the SoC (live: Born SoC 51 % vs. HV level 90 % from
+        # a later package -> SoC wrongly flagged implausible).
+        return all(
+            o.captured_at is None or soc.captured_at is None or o.captured_at == soc.captured_at
+            for o in others
+        )
+
     if soc.value is not None:
         refs: dict[str, float] = {}
-        hv = values["battery_level_hv"].value
-        if hv is not None:
-            refs["battery_level_hv"] = float(hv)
-        cur, mx = values["energy_content_current"].value, values["energy_content_max"].value
-        if cur is not None and mx:
+        hv_sv = values["battery_level_hv"]
+        if hv_sv.value is not None and same_package(hv_sv):
+            refs["battery_level_hv"] = float(hv_sv.value)
+        cur_sv, mx_sv = values["energy_content_current"], values["energy_content_max"]
+        cur, mx = cur_sv.value, mx_sv.value
+        if cur is not None and mx and same_package(cur_sv, mx_sv):
             refs["energy_quotient"] = round(100.0 * cur / mx, 2)
         bad = {k: v for k, v in refs.items() if abs(v - soc.value) > SOC_TOLERANCE_PERCENT}
         if bad:
