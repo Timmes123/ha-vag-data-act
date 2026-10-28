@@ -46,23 +46,13 @@ via logs/entities over MCP. Portal credentials exist only in the HA UI, never in
   project history – that stays in chat/memory.
 - Keep `docs/slot-mapping.md` up to date with every verified key finding.
 
-## Project status (2026-10-28, v0.2.2 pre-release)
-- Both vehicles (two portal accounts) log in (Auth0 chain → `/services/callbacklogin`), sessions
-  are reused across polls and restarts (cookies in `.storage`).
-- **Packages are partial** (live scans of 30+30 packages via service `scan_datasets`): Born 6…93
-  points, SoC in 11/30; Tavascan 143…171, SoC missing in 3 during a trip. Both portal data
-  requests are identical (All Data, 15 min). Portal rate-limits (HTTP 429) after ~25 downloads.
-  v0.2.0 therefore downloads every unseen package (1 s apart, stop at 429) and merges points by
-  key into a persistent store with per-value provenance. v0.2.1 (store migration fix) is live:
-  both entries loaded, 30 packages each backfilled without 429, Born shows SoC 51 % / 135 km /
-  CHARGE_STATE_CHARGING_ERROR from the 19:47Z package. All releases are pre-releases; no stable
-  has been promoted yet.
-- Verified live: range key `0ca40e18` = display (90 km at 23 %); climate target temperature =
-  10 °C + raw/10 (120 → 22.0 °C Tavascan, 115 → 21.5 °C Born), shipped in v0.2.2. SoC and HV
-  level always arrive in the same package (see docs/slot-mapping.md).
-- Open: `climatisation_state`/`remaining_climate_time` key attribution (Born delivers only the
-  `f95799d0`/`3c19831c` pair → likely actual state).
-- 2026-10-28: the previous Data Act integration was removed from the user's HA (config entries
-  and HACS repository); entity ids lost their `_2` suffix; the energy dashboard and the monthly
-  utility meters point at this integration's entities. The user's charging manager still has to
-  be switched to these entities by the user in its own UI (needs its admin password).
+## Project status (2026-10-28, v0.2.3 pre-release)
+- Both vehicles log in and sync. Every unseen portal package is merged by key into a persistent point
+  store (packages are partial). SoC plausibility only within the same package; climate target
+  temperature = 10 °C + raw/10 (verified on two cars); bulk-threshold sensors (Born).
+- Development is paused on the user's decision (2026-10-28). The user's live SoC now comes from
+  another source; this integration is kept mainly for odometer, lock state, temperatures and errors.
+  Details of the user's setup are in the local memory, not in this public repository.
+- Open, low priority: `climatisation_state` / `remaining_climate_time` key attribution (the Born
+  delivers only the `f95799d0`/`3c19831c` pair, likely the actual state).
+- All releases are pre-releases; none promoted to stable yet.
